@@ -252,6 +252,13 @@ if __name__ == "__main__":
         default="gpx",
         help="to download personal documents or ebook",
     )
+    parser.add_argument(
+        "--out",
+        dest="out_dir",
+        action="store",
+        default="garmin_export_out",
+        help="download out file dir",
+    )
     options = parser.parse_args()
     secret_string = GarminLogin(options.user, options.pwd, options.is_cn).gen_secret()
     auth_domain = (
@@ -262,7 +269,7 @@ if __name__ == "__main__":
     if secret_string == "":
         print("username or password errror")
         sys.exit(1)
-    folder = "garmin_export_out"
+    folder = options.out_dir
     # make gpx or tcx dir
     if not os.path.exists(folder):
         os.mkdir(folder)
@@ -280,3 +287,5 @@ if __name__ == "__main__":
         )
     )
     loop.run_until_complete(future)
+
+    os.system(f"touch {folder}/success")
