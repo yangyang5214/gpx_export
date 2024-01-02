@@ -193,12 +193,14 @@ async def gather_with_concurrency(n, tasks):
 
 
 def get_downloaded_ids(folder):
-    return [i.split(".")[0] for i in os.listdir(folder) if not i.startswith(".")]
+    return [
+        i.split(".")[0]
+        for i in os.listdir(folder)
+        if i.endswith(".gpx") and not i.startswith(".")
+    ]
 
 
-async def download_new_activities(
-        secret_string, auth_domain, downloaded_ids, is_only_running, folder, file_type
-):
+async def download_new_activities(secret_string, auth_domain, downloaded_ids, is_only_running, folder, file_type):
     client = Garmin(secret_string, auth_domain, is_only_running)
     # because I don't find a para for after time, so I use garmin-id as filename
     # to find new run to generage
@@ -274,6 +276,8 @@ if __name__ == "__main__":
     if not os.path.exists(folder):
         os.mkdir(folder)
     downloaded_ids = get_downloaded_ids(folder)
+
+    print(f'downloaded_ids size: {len(downloaded_ids)}')
 
     loop = asyncio.get_event_loop()
     future = asyncio.ensure_future(
