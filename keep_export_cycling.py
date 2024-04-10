@@ -36,6 +36,8 @@ def login(session, mobile, password):
         token = r.json()["data"]["token"]
         headers["Authorization"] = f"Bearer {token}"
         return session, headers
+    else:
+        print(f'login failed. {r}')
 
 
 def get_to_download_runs_ids(session, headers):
