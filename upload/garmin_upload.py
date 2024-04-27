@@ -10,7 +10,7 @@ def main(user: str, pwd: str, is_cn: bool, gpx_file: str):
     if is_cn:
         garth.configure(
             domain="garmin.cn",
-            timeout=180
+            timeout=60 * 5
         )
 
     try:
