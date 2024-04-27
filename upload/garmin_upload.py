@@ -8,7 +8,10 @@ def main(user: str, pwd: str, is_cn: bool, gpx_file: str):
         exit(1)
 
     if is_cn:
-        garth.configure(domain="garmin.cn")
+        garth.configure(
+            domain="garmin.cn",
+            timeout=180
+        )
 
     try:
         garth.login(user, pwd)
