@@ -1,22 +1,23 @@
 import argparse
+
 import garth
 
 
 def main(user: str, pwd: str, is_cn: bool, gpx_file: str):
-    if not user:
-        exit(1)
+    garth.configure(
+        timeout=10
+    )
 
     if is_cn:
         garth.configure(
             domain="garmin.cn",
-            timeout=60 * 5
         )
 
     try:
         garth.login(user, pwd)
-    except Exception as e:
-        print(e)
-        exit(1)
+    except Exception as ignore:
+        print('登录失败')
+        return
 
     with open(gpx_file, "rb") as f:
         uploaded = garth.client.upload(f)
