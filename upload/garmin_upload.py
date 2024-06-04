@@ -17,7 +17,7 @@ def main(user: str, pwd: str, is_cn: bool, gpx_file: str):
         garth.login(user, pwd)
     except Exception as ignore:
         print('登录失败')
-        return
+        exit(-1)
 
     with open(gpx_file, "rb") as f:
         uploaded = garth.client.upload(f)
