@@ -1,5 +1,4 @@
 import argparse
-import sys
 import garth
 
 
@@ -15,8 +14,8 @@ def main(user: str, pwd: str, is_cn: bool, gpx_file: str):
 
     try:
         garth.login(user, pwd)
-    except:
-        print('login failed')
+    except Exception as e:
+        print(e)
         exit(1)
 
     with open(gpx_file, "rb") as f:
