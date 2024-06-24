@@ -2,7 +2,6 @@ import argparse
 import os.path
 
 import garth
-import sys
 
 
 class GarminLogin:
@@ -16,7 +15,7 @@ class GarminLogin:
         if is_cn:
             self.domain = 'garmin.cn'
 
-    def gen_secret(self) -> str:
+    def gen_secret(self):
         if self.domain:
             garth.configure(domain=self.domain)
         try:
@@ -25,7 +24,6 @@ class GarminLogin:
                 return garth.client.load(p)
             garth.login(self.username, self.password)
             garth.client.dump(p)
-            return garth.client.dumps()
         except Exception as e:
             print(e)
             return ""
