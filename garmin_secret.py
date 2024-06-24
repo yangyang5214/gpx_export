@@ -1,4 +1,5 @@
 import argparse
+import os.path
 
 import garth
 import sys
@@ -19,7 +20,11 @@ class GarminLogin:
         if self.domain:
             garth.configure(domain=self.domain)
         try:
+            p = '.garth_' + self.username
+            if os.path.exists(p):
+                return garth.client.load(p)
             garth.login(self.username, self.password)
+            garth.client.dump(p)
             return garth.client.dumps()
         except Exception as e:
             print(e)
