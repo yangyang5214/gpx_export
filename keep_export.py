@@ -14,8 +14,8 @@ import xml.etree.ElementTree as ET
 
 # need to test
 LOGIN_API = "https://api.gotokeep.com/v1.1/users/login"
-RUN_DATA_API = "https://api.gotokeep.com/pd/v3/stats/detail?dateUnit=all&type=running&lastDate={last_date}"
-RUN_LOG_API = "https://api.gotokeep.com/pd/v3/runninglog/{run_id}"
+RUN_DATA_API = "https://api.gotokeep.com/pd/v3/stats/detail?dateUnit=all&type={activity_type}&lastDate={last_date}"
+RUN_LOG_API = "https://api.gotokeep.com/pd/v3/{log_type}/{run_id}"
 
 HR_FRAME_THRESHOLD_IN_DECISECOND = 100  # Maximum time difference to consider a data point as the nearest, the unit is decisecond(分秒)
 
@@ -25,6 +25,7 @@ TIMESTAMP_THRESHOLD_IN_DECISECOND = 3_600_000  # Threshold for target timestamp 
 TRANS_GCJ02_TO_WGS84 = True
 
 user_agent = "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1"
+
 
 def login(session, mobile, password):
     headers = {
@@ -42,11 +43,10 @@ def login(session, mobile, password):
 def get_to_download_runs_ids(session, headers):
     last_date = 0
     result = []
-    while 1:
-        r = session.get(RUN_DATA_API.format(last_date=last_date), headers=headers)
+    for activity_type in ['hiking', 'cycling', 'running']:
+        r = session.get(RUN_DATA_API.format(activity_type=activity_type, last_date=last_date), headers=headers)
         if r.ok:
             run_logs = r.json()["data"]["records"]
-
             for i in run_logs:
                 logs = [j["stats"] for j in i["logs"]]
                 result.extend(k["id"] for k in logs if not k["isDoubtful"])
@@ -60,7 +60,12 @@ def get_to_download_runs_ids(session, headers):
 
 
 def get_single_run_data(session, headers, run_id):
-    r = session.get(RUN_LOG_API.format(run_id=run_id), headers=headers)
+    log_type = 'runninglog'
+    if run_id.endswith("hk"):
+        log_type = 'hikinglog'
+    elif run_id.endswith("cy"):
+        log_type = 'cyclinglog'
+    r = session.get(RUN_LOG_API.format(log_type=log_type, run_id=run_id), headers=headers)
     if r.ok:
         return r.json()
 
@@ -120,6 +125,8 @@ def get_all_keep_tracks(email, password, out_dir):
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
     s = requests.Session()
+    print('email:' + email)
+    print('password:' + password)
     s, headers = login(s, email, password)
     runs = get_to_download_runs_ids(s, headers)
 
