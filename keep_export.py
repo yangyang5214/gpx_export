@@ -55,7 +55,7 @@ def get_to_download_runs_ids(session, headers):
             print(f"pares keep ids data since {since_time}")
             time.sleep(1)  # spider rule
             if not last_date:
-                break
+                continue
     return result
 
 
