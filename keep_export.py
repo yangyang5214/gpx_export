@@ -109,12 +109,16 @@ def parse_raw_data_to_nametuple(run_data, out_dir):
                 p["latitude"] = run_points_data[i][0]
                 p["longitude"] = run_points_data[i][1]
 
+        if len(run_points_data_gpx) == 0:
+            return
         for p in run_points_data_gpx:
             p_hr = find_nearest_hr(decoded_hr_data, int(p["timestamp"]), start_time)
             if p_hr:
                 p["hr"] = p_hr
 
         gpx_data = parse_points_to_gpx(run_points_data_gpx, start_time)
+        if gpx_data is None:
+            return
         download_keep_gpx(gpx_data, str(keep_id), out_dir)
         keep_ids.append(keep_id)
     else:
@@ -159,6 +163,8 @@ def parse_points_to_gpx(run_points_data, start_time):
     Returns:
         gpx_data (str): GPX data in string format.
     """
+    if len(run_points_data) == 0:
+        return None
     points_dict_list = []
     # early timestamp fields in keep's data stands for delta time, but in newly data timestamp field stands for exactly time,
     # so it does'nt need to plus extra start_time
