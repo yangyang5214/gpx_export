@@ -286,7 +286,7 @@ if __name__ == "__main__":
         "--out",
         dest="out_dir",
         action="store",
-        default="garmin_export_out",
+        default="keep_export_out",
         help="download out file dir",
     )
 
