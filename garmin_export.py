@@ -5,7 +5,7 @@ Copy most code from https://github.com/cyberjunky/python-garminconnect
 
 import argparse
 import asyncio
-import datetime
+import json
 import os
 import time
 import traceback
@@ -195,20 +195,21 @@ class Garmin:
     def download(self, path, **kwargs):
         return self.garth.download(path, **kwargs)
 
-    def get_activity_id_list(self):
+    def get_activity_id_list(self, is_all):
         activities = []
         start = 0
         limit = 20
         url = self.garmin_connect_activities
-        today = datetime.date.today()
-        start_date = today - datetime.timedelta(days=100)
         params = {
-            "startDate": str(start_date.isoformat()),
-            "endDate": str(today.isoformat()),
             "start": str(start),
             "limit": str(limit),
+            "_": int(time.time() * 1000)
         }
+        end_size = 0
+        if not is_all:
+            end_size = 20
         while True:
+            print(f"params is {json.dumps(params)}")
             params["start"] = str(start)
             act = self.connectapi(url, params=params)
             if act:
@@ -216,10 +217,14 @@ class Garmin:
                 start = start + limit
             else:
                 break
-        return [str(item["activityId"]).split("_")[0]
-                for item in activities
-                if item['activityType']['typeKey'] != 'other'
-                ]
+
+            if start == end_size:
+                break
+        return [
+            str(item["activityId"]).split("_")[0]
+            for item in activities
+            if item['activityType']['typeKey'] != 'other'
+        ]
 
 
 class GarminConnectHttpError(Exception):
@@ -297,9 +302,9 @@ def get_downloaded_ids(folder):
     ]
 
 
-def download_new_activities(secret_path, is_cn, downloaded_ids, folder):
+def download_new_activities(secret_path, is_cn, downloaded_ids, folder, is_all):
     api = Garmin(secret_path, is_cn)
-    activity_ids = api.get_activity_id_list()
+    activity_ids = api.get_activity_id_list(is_all)
     print(f"all activity_ids size is {len(activity_ids)}")
     to_generate_garmin_ids = list(set(activity_ids) - set(downloaded_ids))
     print(f"{len(to_generate_garmin_ids)} new activities to be downloaded")
@@ -322,6 +327,12 @@ if __name__ == "__main__":
         help="if garmin accout is cn",
     )
     parser.add_argument(
+        "--all",
+        dest="is_all",
+        action="store_true",
+        help="download all",
+    )
+    parser.add_argument(
         "--out",
         dest="out_dir",
         action="store",
@@ -334,6 +345,8 @@ if __name__ == "__main__":
     GarminLogin(options.user, options.pwd, options.is_cn).gen_secret(p)
 
     folder = options.out_dir
+    is_all = options.is_all
+
     # make gpx or tcx dir
     if not os.path.exists(folder):
         os.mkdir(folder)
@@ -346,4 +359,5 @@ if __name__ == "__main__":
         options.is_cn,
         downloaded_ids,
         folder,
+        is_all
     )
