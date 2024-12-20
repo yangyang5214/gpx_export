@@ -195,7 +195,7 @@ class Garmin:
     def download(self, path, **kwargs):
         return self.garth.download(path, **kwargs)
 
-    def get_activity_id_list(self, is_all):
+    def get_activity_id_list(self, year, activity_type):
         activities = []
         start = 0
         limit = 20
@@ -205,21 +205,30 @@ class Garmin:
             "limit": str(limit),
             "_": int(time.time() * 1000)
         }
+
+        if activity_type:
+            params["activityType"] = activity_type
+
         end_size = 0
-        if not is_all:
+        if not year:
             end_size = 20
         while True:
             print(f"params is {json.dumps(params)}")
             params["start"] = str(start)
             act = self.connectapi(url, params=params)
             if act:
-                activities.extend(act)
+                for item in act:
+                    start_time = item['startTimeLocal']
+                    if year != 0 and not start_time.startswith(str(year)):
+                        break
+                    activities.append(item)
                 start = start + limit
             else:
                 break
 
             if start == end_size:
                 break
+
         return [
             str(item["activityId"]).split("_")[0]
             for item in activities
@@ -302,9 +311,9 @@ def get_downloaded_ids(folder):
     ]
 
 
-def download_new_activities(secret_path, is_cn, downloaded_ids, folder, is_all):
+def download_new_activities(secret_path, is_cn, downloaded_ids, folder, year, activity_type):
     api = Garmin(secret_path, is_cn)
-    activity_ids = api.get_activity_id_list(is_all)
+    activity_ids = api.get_activity_id_list(year, activity_type)
     print(f"all activity_ids size is {len(activity_ids)}")
     to_generate_garmin_ids = list(set(activity_ids) - set(downloaded_ids))
     print(f"{len(to_generate_garmin_ids)} new activities to be downloaded")
@@ -314,6 +323,12 @@ def download_new_activities(secret_path, is_cn, downloaded_ids, folder, is_all):
         download_garmin_data(api, activity_id, folder)
     print(f"Download finished. Elapsed {time.time() - start_time} seconds")
     return to_generate_garmin_ids
+
+
+class ActivityType:
+    CYCLING = "cycling"
+    RUNNING = "running"
+    WALKING = "walking"
 
 
 if __name__ == "__main__":
@@ -327,11 +342,11 @@ if __name__ == "__main__":
         help="if garmin accout is cn",
     )
     parser.add_argument(
-        "--all",
-        dest="is_all",
-        action="store_true",
-        help="download all",
+        '--year',
+        type=int,
+        help="Specify the year (eg: 2023)."
     )
+
     parser.add_argument(
         "--out",
         dest="out_dir",
@@ -339,13 +354,21 @@ if __name__ == "__main__":
         default="garmin_export_out",
         help="download out file dir",
     )
+    parser.add_argument(
+        '--activity_type',
+        choices=[ActivityType.CYCLING, ActivityType.WALKING, ActivityType.RUNNING],
+        help="Specify the type of activity"
+    )
+
     options = parser.parse_args()
 
     p = '.garth_' + options.user
     GarminLogin(options.user, options.pwd, options.is_cn).gen_secret(p)
 
     folder = options.out_dir
-    is_all = options.is_all
+    year = options.year
+
+    activity_type = options.activity_type
 
     # make gpx or tcx dir
     if not os.path.exists(folder):
@@ -359,5 +382,6 @@ if __name__ == "__main__":
         options.is_cn,
         downloaded_ids,
         folder,
-        is_all
+        year,
+        activity_type
     )
